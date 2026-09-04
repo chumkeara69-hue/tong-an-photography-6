@@ -1,0 +1,67 @@
+generator client { provider = "prisma-client-js" }
+
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+
+enum OrderStatus { PENDING_PAYMENT PAID REJECTED CANCELLED }
+enum PaymentStatus { PENDING APPROVED REJECTED }
+enum AssetKind { PREVIEW ORIGINAL RECEIPT QR }
+
+model Admin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model Photo {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String   @default("")
+  category    String   @default("Featured")
+  price       Decimal  @db.Decimal(10,2)
+  width       Int?
+  height      Int?
+  previewKey  String
+  originalKey String
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  customerName  String
+  customerEmail String
+  phone         String?
+  total         Decimal       @db.Decimal(10,2)
+  status        OrderStatus   @default(PENDING_PAYMENT)
+  payment       Payment?
+  items         OrderItem[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model OrderItem {
+  id       String  @id @default(cuid())
+  orderId  String
+  photoId  String
+  price    Decimal @db.Decimal(10,2)
+  order    Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  photo    Photo   @relation(fields: [photoId], references: [id])
+  @@unique([orderId, photoId])
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  orderId     String        @unique
+  method      String        @default("KHQR")
+  amount      Decimal       @db.Decimal(10,2)
+  receiptKey  String?
+  status      PaymentStatus @default(PENDING)
+  note        String?
+  reviewedAt  DateTime?
+  order       Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdAt   DateTime      @default(now())
+}
