@@ -1,10 +1,24 @@
-generator client { provider = "prisma-client-js" }
+generator client {
+  provider = "prisma-client-js"
+}
 
-datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
 
-enum OrderStatus { PENDING_PAYMENT PAID REJECTED CANCELLED }
-enum PaymentStatus { PENDING APPROVED REJECTED }
-enum AssetKind { PREVIEW ORIGINAL RECEIPT QR }
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  REJECTED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
 
 model Admin {
   id           String   @id @default(cuid())
@@ -14,19 +28,19 @@ model Admin {
 }
 
 model Photo {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   title       String
-  slug        String   @unique
-  description String   @default("")
-  category    String   @default("Featured")
-  price       Decimal  @db.Decimal(10,2)
+  slug        String      @unique
+  description String      @default("")
+  category    String      @default("Featured")
+  price       Decimal     @db.Decimal(10, 2)
   width       Int?
   height      Int?
   previewKey  String
   originalKey String
-  isPublished Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isPublished Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
   orderItems  OrderItem[]
 }
 
@@ -35,33 +49,40 @@ model Order {
   customerName  String
   customerEmail String
   phone         String?
-  total         Decimal       @db.Decimal(10,2)
+  total         Decimal       @db.Decimal(10, 2)
   status        OrderStatus   @default(PENDING_PAYMENT)
   payment       Payment?
   items         OrderItem[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+
+  @@index([customerEmail])
+  @@index([status])
 }
 
 model OrderItem {
-  id       String  @id @default(cuid())
-  orderId  String
-  photoId  String
-  price    Decimal @db.Decimal(10,2)
-  order    Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  photo    Photo   @relation(fields: [photoId], references: [id])
+  id      String  @id @default(cuid())
+  orderId String
+  photoId String
+  price   Decimal @db.Decimal(10, 2)
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  photo   Photo   @relation(fields: [photoId], references: [id])
+
   @@unique([orderId, photoId])
+  @@index([photoId])
 }
 
 model Payment {
   id          String        @id @default(cuid())
   orderId     String        @unique
   method      String        @default("KHQR")
-  amount      Decimal       @db.Decimal(10,2)
+  amount      Decimal       @db.Decimal(10, 2)
   receiptKey  String?
   status      PaymentStatus @default(PENDING)
   note        String?
   reviewedAt  DateTime?
   order       Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
   createdAt   DateTime      @default(now())
+
+  @@index([status])
 }

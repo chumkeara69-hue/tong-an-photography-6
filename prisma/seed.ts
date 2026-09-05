@@ -12,6 +12,7 @@ const photos = [
 async function main() {
   const email = process.env.ADMIN_EMAIL || "admin@example.com";
   const password = process.env.ADMIN_PASSWORD || "change-me-before-production";
+  if (process.env.NODE_ENV === "production" && !process.env.ADMIN_PASSWORD) throw new Error("ADMIN_PASSWORD is required in production");
   const passwordHash = await bcrypt.hash(password, 12);
   await prisma.admin.upsert({ where:{email}, update:{passwordHash}, create:{email,passwordHash} });
   for (const [title,slug,description,category,price,previewKey] of photos) {

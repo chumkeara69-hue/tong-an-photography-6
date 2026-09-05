@@ -46,3 +46,13 @@ This project keeps the supplied dark / cinematic Tong An Photography visual dire
 Build command: `npm run build`
 The build runs `prisma generate && next build`.
 Use Neon `DATABASE_URL` and the B2/Auth variables in Vercel Project Settings.
+
+## Vercel / Prisma deployment checklist
+
+1. Set `DATABASE_URL` to your Neon PostgreSQL connection string.
+2. Set `AUTH_SECRET` to a long random secret.
+3. Set the Backblaze B2 S3-compatible variables from `.env.example`.
+4. Set `ADMIN_EMAIL` and `ADMIN_PASSWORD`.
+5. Build command: `npm run build`.
+6. After the first deployment, run `npx prisma db push` against the production database, then `npm run db:seed` once if you want the demo catalog/admin.
+7. Preview images stored in B2 are served with short-lived signed URLs; original files are never exposed until an approved payment exists.
