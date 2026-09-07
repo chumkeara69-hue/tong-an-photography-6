@@ -1,2 +1,3 @@
+export const dynamic = "force-dynamic";
 import {prisma} from "@/lib/db"; import {notFound} from "next/navigation"; import PaymentClient from "./PaymentClient";
 export default async function PaymentPage({params}:{params:Promise<{id:string}>}){const {id}=await params;const o=await prisma.order.findUnique({where:{id},include:{items:{include:{photo:true}},payment:true}});if(!o)return notFound();return <PaymentClient order={{id:o.id,total:Number(o.total),status:o.status,paymentStatus:o.payment?.status||"PENDING",items:o.items.map(i=>({title:i.photo.title,price:Number(i.price)}))}}/>}

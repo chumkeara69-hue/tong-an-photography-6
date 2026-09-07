@@ -56,3 +56,22 @@ Use Neon `DATABASE_URL` and the B2/Auth variables in Vercel Project Settings.
 5. Build command: `npm run build`.
 6. After the first deployment, run `npx prisma db push` against the production database, then `npm run db:seed` once if you want the demo catalog/admin.
 7. Preview images stored in B2 are served with short-lived signed URLs; original files are never exposed until an approved payment exists.
+
+
+## Quick deploy to Vercel
+
+1. Push this project to GitHub and import the repository into Vercel.
+2. In Vercel → Project Settings → Environment Variables, add every variable from `.env.example`:
+   `DATABASE_URL`, `B2_ENDPOINT`, `B2_REGION`, `B2_BUCKET`, `B2_KEY_ID`, `B2_APPLICATION_KEY`, `AUTH_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `NEXT_PUBLIC_SITE_URL`.
+3. Deploy with the default Next.js settings. The project already contains `vercel.json` and uses `npm run build`.
+4. After the first deployment, initialize the production database from a local terminal connected to the same `DATABASE_URL`:
+   `npx prisma db push`
+   then (optional demo catalog/admin):
+   `npm run db:seed`
+5. Set `NEXT_PUBLIC_SITE_URL` to the final Vercel domain and redeploy if you changed it.
+
+### Important
+- The B2 bucket must remain private.
+- `AUTH_SECRET`, `ADMIN_PASSWORD`, and B2 credentials must be stored only in Vercel Environment Variables.
+- The public preview images use `unoptimized` Next/Image because their signed B2 host is dynamic; this prevents Vercel Image Optimization from rejecting the signed URL.
+- Database-backed pages are marked `force-dynamic`, so `next build` does not try to query the production database during the build.
