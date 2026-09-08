@@ -1,0 +1,77 @@
+# Tong An Photography — production-ready marketplace foundation
+
+This project keeps the supplied dark / cinematic Tong An Photography visual direction and turns the screens into a real Next.js marketplace.
+
+## Stack
+- Next.js App Router + TypeScript
+- Neon PostgreSQL + Prisma
+- Backblaze B2 through its S3-compatible API
+- Admin session cookie using `jose`
+- Password hashing with `bcryptjs`
+- Vercel-ready
+
+## Features implemented
+- Gallery and photo details with prices
+- Client cart
+- Checkout and order creation
+- KHQR payment step + receipt upload
+- Admin login
+- Admin photo upload (preview + original) to B2
+- Admin receipt review / approve / reject
+- Private original-file keys
+- Signed original downloads only after approved payment
+- Responsive UI based on the supplied design direction
+
+## Setup
+1. Create a Neon Postgres database.
+2. Create a private Backblaze B2 bucket and an application key with read/write access to that bucket.
+3. Copy `.env.example` to `.env.local` and fill the values.
+4. Run:
+   `npm install`
+   `npm run db:push`
+   `npm run db:seed`
+   `npm run dev`
+5. Deploy to Vercel with the same environment variables, then run Prisma migration/push during deployment as appropriate.
+
+### Important production hardening
+- Replace the seed admin password immediately.
+- Set a long random `AUTH_SECRET`.
+- Keep B2 bucket private. Do not expose `B2_APPLICATION_KEY` to the browser.
+- Replace the placeholder QR block in `app/payment-status/[id]/PaymentClient.tsx` with your real KHQR image/data.
+- For customer download history, add email magic-link authentication before exposing `/account` as a private dashboard.
+- Configure a real email provider for order/payment notifications.
+- Consider a background upload path for very large originals; Vercel serverless request limits can make 100MB multipart uploads impractical. The current route is correct for smaller files but a production implementation should use direct-to-B2 presigned uploads for large originals.
+
+## Vercel
+Build command: `npm run build`
+The build runs `prisma generate && next build`.
+Use Neon `DATABASE_URL` and the B2/Auth variables in Vercel Project Settings.
+
+## Vercel / Prisma deployment checklist
+
+1. Set `DATABASE_URL` to your Neon PostgreSQL connection string.
+2. Set `AUTH_SECRET` to a long random secret.
+3. Set the Backblaze B2 S3-compatible variables from `.env.example`.
+4. Set `ADMIN_EMAIL` and `ADMIN_PASSWORD`.
+5. Build command: `npm run build`.
+6. After the first deployment, run `npx prisma db push` against the production database, then `npm run db:seed` once if you want the demo catalog/admin.
+7. Preview images stored in B2 are served with short-lived signed URLs; original files are never exposed until an approved payment exists.
+
+
+## Quick deploy to Vercel
+
+1. Push this project to GitHub and import the repository into Vercel.
+2. In Vercel → Project Settings → Environment Variables, add every variable from `.env.example`:
+   `DATABASE_URL`, `B2_ENDPOINT`, `B2_REGION`, `B2_BUCKET`, `B2_KEY_ID`, `B2_APPLICATION_KEY`, `AUTH_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `NEXT_PUBLIC_SITE_URL`.
+3. Deploy with the default Next.js settings. The project already contains `vercel.json` and uses `npm run build`.
+4. After the first deployment, initialize the production database from a local terminal connected to the same `DATABASE_URL`:
+   `npx prisma db push`
+   then (optional demo catalog/admin):
+   `npm run db:seed`
+5. Set `NEXT_PUBLIC_SITE_URL` to the final Vercel domain and redeploy if you changed it.
+
+### Important
+- The B2 bucket must remain private.
+- `AUTH_SECRET`, `ADMIN_PASSWORD`, and B2 credentials must be stored only in Vercel Environment Variables.
+- The public preview images use `unoptimized` Next/Image because their signed B2 host is dynamic; this prevents Vercel Image Optimization from rejecting the signed URL.
+- Database-backed pages are marked `force-dynamic`, so `next build` does not try to query the production database during the build.
